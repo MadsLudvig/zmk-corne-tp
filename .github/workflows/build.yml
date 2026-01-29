@@ -68,6 +68,18 @@ jobs:
       - name: Rename left firmware
         run: cp build/zephyr/zmk.uf2 firmware/corne_tp_left-nice_nano_v2.uf2
 
+      - name: Clean build for settings reset
+        run: rm -rf build
+
+      - name: Build (settings_reset)
+        run: |
+          west build -s zmk/app -b nice_nano_v2 -- \
+            -DSHIELD=settings_reset \
+            -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
+
+      - name: Rename settings reset firmware
+        run: cp build/zephyr/zmk.uf2 firmware/settings_reset-nice_nano_v2.uf2
+
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
