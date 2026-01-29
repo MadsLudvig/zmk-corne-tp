@@ -8,7 +8,7 @@ include:
 
   # Left side - Peripheral with nice!view display
   - board: nice_nano_v2
-    shield: corne_tp_left nice_view_adapter nice_epaper
+    shield: corne_tp_left nice_view_adapter nice_view
 
   # Settings reset - flash to both halves to clear bluetooth bonds
   - board: nice_nano_v2
