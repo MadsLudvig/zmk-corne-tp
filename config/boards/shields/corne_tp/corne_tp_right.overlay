@@ -38,8 +38,9 @@
 // Pin Configuration for HolyKeebs trackpoint module
 // Clock (SCL): P0.17 = pro_micro 2
 // Data (SDA):  P0.20 = pro_micro 3
-#define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 2 GPIO_ACTIVE_HIGH>
-#define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 3 GPIO_ACTIVE_HIGH>
+// Using GPIO_PULL_UP to enable internal pullup resistors (PS/2 requires pullups)
+#define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>
+#define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>
 
 // PINCTRL notation for SDA pin (P0.20)
 // Format: NRF_PSEL(UART_RX, port, pin) where P0.20 = port 0, pin 20
