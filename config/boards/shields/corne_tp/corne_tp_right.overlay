@@ -199,10 +199,16 @@
         /* Axis inversion - adjusted for correct orientation */
         tp-x-invert;
 
-        /* Sensitivity (default: 128, higher = more sensitive, max: 255) */
-        tp-sensitivity = <255>;
+        /* Sensitivity (default: 128, range: 0-255) */
+        /* Lowered from 255 - less twitchy at slow speeds */
+        tp-sensitivity = <180>;
+
+        /* Negative inertia (default: 6, range: 0-255) */
+        /* Makes cursor stop more quickly when releasing pressure */
+        tp-neg-inertia = <24>;
 
         /* Max speed/acceleration (default: 97, max: 255) */
+        /* Keeps fast movements responsive */
         tp-val6-upper-speed = <255>;
     };
 
