@@ -196,9 +196,8 @@
         ps2-device = <&gpio_ps2>;
 #endif
 
-        /* Match QMK HolyKeebs settings */
-        tp-x-invert;        /* PS2_MOUSE_INVERT_X */
-        tp-y-invert;        /* PS2_MOUSE_INVERT_Y */
+        /* Axis inversion - adjusted for correct orientation */
+        tp-x-invert;
     };
 
     mouse_ps2_input_listener: mouse_ps2_input_listener {
