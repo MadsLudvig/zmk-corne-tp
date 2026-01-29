@@ -30,6 +30,7 @@ jobs:
             zmk/
             kb_zmk_ps2_mouse_trackpoint_driver/
             zmk-nice-oled/
+            zmk-nice-custom/
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('config/west.yml') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
@@ -62,7 +63,7 @@ jobs:
       - name: Build (corne_tp_left)
         run: |
           west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="corne_tp_left nice_view_adapter nice_epaper" \
+            -DSHIELD="corne_tp_left nice_view_adapter nice_custom" \
             -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
 
       - name: Rename left firmware

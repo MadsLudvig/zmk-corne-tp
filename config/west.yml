@@ -4,6 +4,8 @@ manifest:
       url-base: https://github.com/infused-kim
     - name: mctechnology17
       url-base: https://github.com/mctechnology17
+    - name: haerttrich
+      url-base: https://github.com/haerttrich
 
   projects:
     # Using infused-kim's ZMK fork (known working with trackpoint driver)
@@ -20,6 +22,11 @@ manifest:
     # Nice!view display with dual battery support
     - name: zmk-nice-oled
       remote: mctechnology17
+      revision: main
+
+    # Nice!view custom display with layer relay to peripheral
+    - name: zmk-nice-custom
+      remote: haerttrich
       revision: main
 
   self:
