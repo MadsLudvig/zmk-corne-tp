@@ -201,6 +201,9 @@
 
         /* Sensitivity (default: 128, higher = more sensitive, max: 255) */
         tp-sensitivity = <255>;
+
+        /* Max speed/acceleration (default: 97, max: 255) */
+        tp-val6-upper-speed = <255>;
     };
 
     mouse_ps2_input_listener: mouse_ps2_input_listener {
