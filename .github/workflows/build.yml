@@ -63,7 +63,7 @@ jobs:
       - name: Build (corne_tp_left)
         run: |
           west build -s zmk/app -b nice_nano_v2 -- \
-            -DSHIELD="corne_tp_left nice_view_adapter nice_custom" \
+            -DSHIELD="corne_tp_left nice_view_adapter nice_view" \
             -DZMK_CONFIG="${GITHUB_WORKSPACE}/config"
 
       - name: Rename left firmware

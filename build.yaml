@@ -6,9 +6,9 @@ include:
   - board: nice_nano_v2
     shield: corne_tp_right
 
-  # Left side - Peripheral with nice!view display (uses zmk-nice-custom for layer relay)
+  # Left side - Peripheral with nice!view display
   - board: nice_nano_v2
-    shield: corne_tp_left nice_view_adapter nice_custom
+    shield: corne_tp_left nice_view_adapter nice_view
 
   # Settings reset - flash to both halves to clear bluetooth bonds
   - board: nice_nano_v2
