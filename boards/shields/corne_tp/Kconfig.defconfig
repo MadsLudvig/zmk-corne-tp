@@ -1,0 +1,31 @@
+# Copyright (c) 2024
+# SPDX-License-Identifier: MIT
+
+if SHIELD_CORNE_TP_LEFT
+
+config ZMK_KEYBOARD_NAME
+    default "Corne TP"
+
+# Left side is PERIPHERAL (right side with trackpoint is central)
+config ZMK_SPLIT_ROLE_CENTRAL
+    default n
+
+endif
+
+if SHIELD_CORNE_TP_RIGHT
+
+config ZMK_KEYBOARD_NAME
+    default "Corne TP"
+
+# Right side is CENTRAL (has the trackpoint)
+config ZMK_SPLIT_ROLE_CENTRAL
+    default y
+
+endif
+
+if SHIELD_CORNE_TP_LEFT || SHIELD_CORNE_TP_RIGHT
+
+config ZMK_SPLIT
+    default y
+
+endif

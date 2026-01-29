@@ -1,0 +1,23 @@
+# Build artifacts
+build/
+firmware/
+
+# West workspace
+.west/
+bootloader/
+modules/
+tools/
+zephyr/
+zmk/
+kb_zmk_ps2_mouse_trackpoint_driver/
+zmk-nice-oled/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
