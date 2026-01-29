@@ -205,7 +205,7 @@
 
         /* Negative inertia (default: 6, range: 0-255) */
         /* Makes cursor stop more quickly when releasing pressure */
-        tp-neg-inertia = <24>;
+        tp-neg-inertia = <80>;
 
         /* Max speed/acceleration (default: 97, max: 255) */
         /* Keeps fast movements responsive */
