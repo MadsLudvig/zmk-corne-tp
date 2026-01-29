@@ -4,9 +4,9 @@
  *
  * Corne Trackpoint - Right side (Central with Trackpoint)
  *
- * Pin Configuration (using nice!nano D4/D6 labels):
- *   Clock (SCL): D4 = P0.22 (&pro_micro 4)
- *   Data (SDA):  D6 = P1.00 (&pro_micro 6)
+ * Pin Configuration (nice!nano GPIO numbers):
+ *   Clock (SCL): P0.17 (&pro_micro 2)
+ *   Data (SDA):  P0.20 (&pro_micro 3)
  */
 
 #include "corne_tp.dtsi"
@@ -29,29 +29,14 @@
 
 /*
  * PS/2 Trackpoint Configuration
- * Using UART driver for best performance on nice!nano v2
+ * Using GPIO driver (more compatible than UART)
  */
 
-// Use UART driver (recommended for nice!nano)
-#define MOUSE_PS2_DRIVER_UART
-
 // Pin Configuration for HolyKeebs trackpoint module
-// Using physical D4/D6 labels on nice!nano:
-// Clock (SCL): D4 = P0.22 = pro_micro 4
-// Data (SDA):  D6 = P1.00 = pro_micro 6
-#define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 4 GPIO_ACTIVE_HIGH>
-#define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 6 GPIO_ACTIVE_HIGH>
-
-// PINCTRL for SDA pin (P1.00)
-// Format: NRF_PSEL(UART_RX, port, pin) - D6 = P1.00 = (1, 0)
-#define MOUSE_PS2_PIN_SDA_PINCTRL <NRF_PSEL(UART_RX, 1, 0)>
-
-// UART baud rate (14400 works for most trackpoints)
-#define MOUSE_PS2_UART_BAUD_RATE <14400>
-
-// Unexposed UART pins (internal to nice!nano, don't change)
-#define MOUSE_PS2_PIN_UNEXPOSED_TX <NRF_PSEL(UART_TX, 0, 27)>
-#define MOUSE_PS2_PIN_UNEXPOSED_RX <NRF_PSEL(UART_RX, 0, 28)>
+// Clock (SCL): P0.17 = pro_micro 2
+// Data (SDA):  P0.20 = pro_micro 3
+#define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 2 GPIO_ACTIVE_HIGH>
+#define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 3 GPIO_ACTIVE_HIGH>
 
 // Marker that trackpoint config is present
 #define MOUSE_PS2_DT_PRESENT
@@ -114,69 +99,21 @@
 
 
 /*
- * UART Pin Control Configuration
- */
-
-&pinctrl {
-    // Default state: receiving PS/2 data
-    uart0_ps2_default: uart0_ps2_default {
-        group1 {
-            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
-                    MOUSE_PS2_PIN_SDA_PINCTRL;
-        };
-    };
-
-    // Sleep state
-    uart0_ps2_sleep: uart0_ps2_sleep {
-        group1 {
-            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
-                    MOUSE_PS2_PIN_SDA_PINCTRL;
-            low-power-enable;
-        };
-    };
-
-    // Transmit state: switch to GPIO bit-banging
-    uart0_ps2_off: uart0_ps2_off {
-        group1 {
-            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
-                    MOUSE_PS2_PIN_UNEXPOSED_RX;
-        };
-    };
-};
-
-
-/*
- * PS/2 UART Device Configuration
- */
-
-&uart0 {
-    status = "okay";
-    compatible = "nordic,nrf-uarte";
-
-    current-speed = MOUSE_PS2_UART_BAUD_RATE;
-    pinctrl-0 = <&uart0_ps2_default>;
-    pinctrl-1 = <&uart0_ps2_off>;
-
-    pinctrl-names = "default", "sleep";
-
-    uart_ps2: uart_ps2 {
-        status = "okay";
-        compatible = "uart-ps2";
-        scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
-        sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
-    };
-};
-
-
-/*
- * Mouse PS/2 Device
+ * PS/2 GPIO Device Configuration (bit-banging mode)
  */
 
 / {
+    gpio_ps2: gpio_ps2 {
+        status = "okay";
+        compatible = "gpio-ps2";
+        scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
+        sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
+    };
+
     mouse_ps2: mouse_ps2 {
         status = "okay";
         compatible = "zmk,input-mouse-ps2";
-        ps2-device = <&uart_ps2>;
+        ps2-device = <&gpio_ps2>;
     };
 
     mouse_ps2_input_listener: mouse_ps2_input_listener {
