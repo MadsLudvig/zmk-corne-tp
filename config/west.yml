@@ -1,17 +1,15 @@
 manifest:
   remotes:
-    - name: urob
-      url-base: https://github.com/urob
     - name: infused-kim
       url-base: https://github.com/infused-kim
     - name: mctechnology17
       url-base: https://github.com/mctechnology17
 
   projects:
-    # Using urob's fork (more up-to-date, has mouse support)
+    # Using infused-kim's ZMK fork (known working with trackpoint driver)
     - name: zmk
-      remote: urob
-      revision: main
+      remote: infused-kim
+      revision: pr-testing/mouse_ps2_module_base
       import: app/west.yml
 
     # PS/2 Trackpoint driver module
