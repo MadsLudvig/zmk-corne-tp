@@ -29,14 +29,28 @@
 
 /*
  * PS/2 Trackpoint Configuration
- * Using GPIO driver (more compatible than UART)
+ * Using UART driver (recommended for nice!nano - much better performance)
  */
+
+// Enable UART driver (comment out to use GPIO driver instead)
+#define MOUSE_PS2_DRIVER_UART
 
 // Pin Configuration for HolyKeebs trackpoint module
 // Clock (SCL): P0.17 = pro_micro 2
 // Data (SDA):  P0.20 = pro_micro 3
 #define MOUSE_PS2_PIN_SCL_PRO_MICRO <&pro_micro 2 GPIO_ACTIVE_HIGH>
 #define MOUSE_PS2_PIN_SDA_PRO_MICRO <&pro_micro 3 GPIO_ACTIVE_HIGH>
+
+// PINCTRL notation for SDA pin (P0.20)
+// Format: NRF_PSEL(UART_RX, port, pin) where P0.20 = port 0, pin 20
+#define MOUSE_PS2_PIN_SDA_PINCTRL <NRF_PSEL(UART_RX, 0, 20)>
+
+// UART baud rate (14400 works for most trackpoints)
+#define MOUSE_PS2_UART_BAUD_RATE <14400>
+
+// Unexposed pins for UART TX (nice!nano internal pins not on breakout)
+#define MOUSE_PS2_PIN_UNEXPOSED_TX <NRF_PSEL(UART_TX, 0, 27)>
+#define MOUSE_PS2_PIN_UNEXPOSED_RX <NRF_PSEL(UART_RX, 0, 28)>
 
 // Marker that trackpoint config is present
 #define MOUSE_PS2_DT_PRESENT
@@ -99,26 +113,91 @@
 
 
 /*
- * PS/2 GPIO Device Configuration (bit-banging mode)
+ * PINCTRL Configuration for UART PS/2 driver
  */
 
-/ {
-    gpio_ps2: gpio_ps2 {
-        status = "okay";
-        compatible = "gpio-ps2";
-        scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
-        sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
+&pinctrl {
+    // UART receive state - uses SDA pin for PS/2 data
+    uart0_ps2_default: uart0_ps2_default {
+        group1 {
+            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+                    MOUSE_PS2_PIN_SDA_PINCTRL;
+        };
     };
 
+    // Sleep state
+    uart0_ps2_sleep: uart0_ps2_sleep {
+        group1 {
+            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+                    MOUSE_PS2_PIN_SDA_PINCTRL;
+            low-power-enable;
+        };
+    };
+
+    // Off state - used when switching to GPIO mode for transmissions
+    uart0_ps2_off: uart0_ps2_off {
+        group1 {
+            psels = MOUSE_PS2_PIN_UNEXPOSED_TX,
+                    MOUSE_PS2_PIN_UNEXPOSED_RX;
+        };
+    };
+};
+
+
+/*
+ * PS/2 Device Configuration
+ */
+
+#ifdef MOUSE_PS2_DRIVER_UART
+
+    // UART-based PS/2 driver (recommended for nice!nano)
+    &uart0 {
+        status = "okay";
+        compatible = "nordic,nrf-uarte";
+
+        current-speed = MOUSE_PS2_UART_BAUD_RATE;
+        pinctrl-0 = <&uart0_ps2_default>;
+        pinctrl-1 = <&uart0_ps2_off>;
+
+        pinctrl-names = "default", "sleep";
+
+        uart_ps2: uart_ps2 {
+            status = "okay";
+            compatible = "uart-ps2";
+            scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
+            sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
+        };
+    };
+
+#else
+
+    // GPIO-based PS/2 driver (fallback, slower)
+    / {
+        gpio_ps2: gpio_ps2 {
+            status = "okay";
+            compatible = "gpio-ps2";
+            scl-gpios = MOUSE_PS2_PIN_SCL_PRO_MICRO;
+            sda-gpios = MOUSE_PS2_PIN_SDA_PRO_MICRO;
+        };
+    };
+
+#endif
+
+
+/ {
     mouse_ps2: mouse_ps2 {
         status = "okay";
         compatible = "zmk,input-mouse-ps2";
+
+#ifdef MOUSE_PS2_DRIVER_UART
+        ps2-device = <&uart_ps2>;
+#else
         ps2-device = <&gpio_ps2>;
+#endif
 
         /* Match QMK HolyKeebs settings */
         tp-x-invert;        /* PS2_MOUSE_INVERT_X */
         tp-y-invert;        /* PS2_MOUSE_INVERT_Y */
-        disable-clicking;   /* Reduce accidental clicks with GPIO driver */
     };
 
     mouse_ps2_input_listener: mouse_ps2_input_listener {
