@@ -198,6 +198,9 @@
 
         /* Axis inversion - adjusted for correct orientation */
         tp-x-invert;
+
+        /* Sensitivity (default: 128, higher = more sensitive, max: 255) */
+        tp-sensitivity = <200>;
     };
 
     mouse_ps2_input_listener: mouse_ps2_input_listener {
