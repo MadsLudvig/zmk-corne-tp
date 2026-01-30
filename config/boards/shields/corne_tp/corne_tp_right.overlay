@@ -216,5 +216,8 @@
         compatible = "zmk,input-listener-ps2";
         status = "okay";
         device = <&mouse_ps2>;
+
+        /* Layer 1 (Lower) enables scroll mode */
+        scroll-layers = <1>;
     };
 };
