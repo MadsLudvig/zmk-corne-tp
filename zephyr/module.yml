@@ -1,0 +1,4 @@
+name: corne_tp
+build:
+  cmake: .
+  kconfig: Kconfig
