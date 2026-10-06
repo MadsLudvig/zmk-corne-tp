@@ -7,7 +7,8 @@ firmware/
 bootloader/
 modules/
 tools/
-zephyr/
+/zephyr/*
+!/zephyr/module.yml
 zmk/
 kb_zmk_ps2_mouse_trackpoint_driver/
 zmk-nice-oled/
