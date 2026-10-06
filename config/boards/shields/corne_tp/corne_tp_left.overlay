@@ -2,7 +2,12 @@
  * Copyright (c) 2024
  * SPDX-License-Identifier: MIT
  *
- * Corne Trackpoint - Left side (Peripheral with Display)
+ * Corne Trackpoint - Left side (CENTRAL, connects to the host)
+ *
+ * Built together with `nice_view_adapter nice_view`, so the stock nice!view
+ * central status screen shows layer, BT profile, output and battery.
+ * TrackPoint events arrive from the right half via the split input defined
+ * in corne_tp.dtsi; the listener below turns them into HID mouse reports.
  */
 
 #include "corne_tp.dtsi"
@@ -16,4 +21,9 @@
         , <&pro_micro 15 (GPIO_ACTIVE_HIGH)>
         , <&pro_micro 14 (GPIO_ACTIVE_HIGH)>
         ;
+};
+
+// Central: listen to the TrackPoint split input and send HID mouse reports.
+&trackpoint_listener {
+    status = "okay";
 };

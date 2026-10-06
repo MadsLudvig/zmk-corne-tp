@@ -6,7 +6,15 @@
 #include <dt-bindings/zmk/keys.h>
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/outputs.h>
-#include <dt-bindings/zmk/mouse.h>
+#include <dt-bindings/zmk/pointing.h>
+
+/*
+ * The TrackPoint driver's runtime-tuning behaviors (&mms, from
+ * behaviors/mouse_setting.dtsi) are intentionally NOT included: behaviors
+ * run on the central (left half), which has no PS/2 device, so they would do
+ * nothing (and are not built there). Tune the TrackPoint via the tp-*
+ * properties in boards/shields/corne_tp/corne_tp_right.overlay instead.
+ */
 
 // Layer definitions
 #define DEFAULT 0

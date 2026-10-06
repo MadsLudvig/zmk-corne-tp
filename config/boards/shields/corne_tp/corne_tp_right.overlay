@@ -2,7 +2,11 @@
  * Copyright (c) 2024
  * SPDX-License-Identifier: MIT
  *
- * Corne Trackpoint - Right side (Central with Trackpoint)
+ * Corne Trackpoint - Right side (PERIPHERAL with TrackPoint, no display)
+ *
+ * The PS/2 TrackPoint driver only runs here. Its events are forwarded to the
+ * left half (central) through the `trackpoint_split` input-split node
+ * declared in corne_tp.dtsi.
  *
  * Pin Configuration (nice!nano GPIO numbers):
  *   Clock (SCL): P0.20 (&pro_micro 3)
@@ -211,10 +215,14 @@
         /* Keeps fast movements responsive */
         tp-val6-upper-speed = <255>;
     };
+};
 
-    mouse_ps2_input_listener: mouse_ps2_input_listener {
-        compatible = "zmk,input-listener-ps2";
-        status = "okay";
-        device = <&mouse_ps2>;
-    };
+/*
+ * Forward the TrackPoint to the central (left half). The central's
+ * `zmk,input-listener` (see corne_tp.dtsi / corne_tp_left.overlay) turns the
+ * events into HID mouse reports. The old fork's `zmk,input-listener-ps2`
+ * listener is not used on mainline.
+ */
+&trackpoint_split {
+    device = <&mouse_ps2>;
 };

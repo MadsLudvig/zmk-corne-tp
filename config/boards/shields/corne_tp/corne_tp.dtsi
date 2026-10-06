@@ -54,4 +54,32 @@
             , <&pro_micro 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>
             ;
     };
+
+    /*
+     * Split input for the TrackPoint.
+     *
+     * The TrackPoint is wired to the RIGHT half (peripheral). This node must
+     * be identical in both halves (same reg). On the right half it is pointed
+     * at the PS/2 mouse device and forwards its events over BLE; on the left
+     * half (central) it acts as an input device that re-raises those events.
+     */
+    split_inputs {
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        trackpoint_split: trackpoint_split@0 {
+            compatible = "zmk,input-split";
+            reg = <0>;
+        };
+    };
+
+    /*
+     * Listener that turns the split input events into HID mouse reports.
+     * Disabled here, enabled only in the central (left) overlay.
+     */
+    trackpoint_listener: trackpoint_listener {
+        compatible = "zmk,input-listener";
+        status = "disabled";
+        device = <&trackpoint_split>;
+    };
 };

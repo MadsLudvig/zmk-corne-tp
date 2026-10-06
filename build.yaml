@@ -1,15 +1,18 @@
-# Build configuration for Corne with Trackpoint
-# Right side is CENTRAL (has trackpoint), Left side is PERIPHERAL (has display)
+# Build configuration for Corne with Trackpoint (mainline ZMK, Zephyr 4.1)
+# Left side is CENTRAL (connects to host, nice!view status screen).
+# Right side is PERIPHERAL (PS/2 TrackPoint, forwarded via split input).
+#
+# Board `nice_nano//zmk` is the nice!nano v2 (formerly `nice_nano_v2`).
 
 include:
-  # Right side - Central with Trackpoint (no display)
-  - board: nice_nano_v2
-    shield: corne_tp_right
-
-  # Left side - Peripheral with nice!view display
-  - board: nice_nano_v2
+  # Left side - Central with nice!view display
+  - board: nice_nano//zmk
     shield: corne_tp_left nice_view_adapter nice_view
 
+  # Right side - Peripheral with TrackPoint (no display)
+  - board: nice_nano//zmk
+    shield: corne_tp_right
+
   # Settings reset - flash to both halves to clear bluetooth bonds
-  - board: nice_nano_v2
+  - board: nice_nano//zmk
     shield: settings_reset

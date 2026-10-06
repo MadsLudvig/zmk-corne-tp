@@ -1,32 +1,22 @@
 manifest:
   remotes:
-    - name: infused-kim
-      url-base: https://github.com/infused-kim
-    - name: mctechnology17
-      url-base: https://github.com/mctechnology17
-    - name: haerttrich
-      url-base: https://github.com/haerttrich
+    - name: zmkfirmware
+      url-base: https://github.com/zmkfirmware
+    - name: badjeff
+      url-base: https://github.com/badjeff
 
   projects:
-    # Using infused-kim's ZMK fork (known working with trackpoint driver)
+    # Mainline ZMK (Zephyr 4.1). Tracks main; once a release tag (v0.4+)
+    # ships Zephyr 4.1, consider pinning to it here and in the workflow ref.
     - name: zmk
-      remote: infused-kim
-      revision: pr-testing/mouse_ps2_module_base
+      remote: zmkfirmware
+      revision: main
       import: app/west.yml
 
-    # PS/2 Trackpoint driver module
+    # PS/2 TrackPoint driver (mainline-compatible, reports via Zephyr input
+    # events). Only compiled on the right half, where the PS/2 device exists.
     - name: kb_zmk_ps2_mouse_trackpoint_driver
-      remote: infused-kim
-      revision: main
-
-    # Nice!view display with dual battery support
-    - name: zmk-nice-oled
-      remote: mctechnology17
-      revision: main
-
-    # Nice!view custom display with layer relay to peripheral
-    - name: zmk-nice-custom
-      remote: haerttrich
+      remote: badjeff
       revision: main
 
   self:
