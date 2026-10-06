@@ -26,17 +26,6 @@
 #define SCROLL  4
 
 / {
-    behaviors {
-        // Tap: middle click. Hold: TrackPoint scrolls (activates SCROLL layer).
-        mclk_scroll: mclk_scroll {
-            compatible = "zmk,behavior-hold-tap";
-            #binding-cells = <2>;
-            flavor = "hold-preferred";
-            tapping-term-ms = <200>;
-            bindings = <&mo>, <&mkp>;
-        };
-    };
-
     keymap {
         compatible = "zmk,keymap";
 
@@ -54,7 +43,7 @@
             display-name = "Lower";
             bindings = <
                 &kp TAB   &kp N1    &kp N2    &kp N3    &kp N4 &kp N5     &kp N6   &kp N7   &kp N8 &kp N9    &kp N0 &kp BSPC
-                &kp LCTRL &mkp LCLK &mclk_scroll SCROLL MCLK &mkp RCLK &trans &trans     &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
+                &kp LCTRL &mkp LCLK &mo SCROLL &mkp RCLK &trans &trans     &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
                 &kp LSHFT &trans    &trans    &trans    &trans &trans     &trans   &trans   &trans &trans    &trans &trans
                                     &kp LGUI &trans &kp SPACE     &kp RET &mo ADJUST &kp RALT
             >;
@@ -80,7 +69,7 @@
             >;
         };
 
-        // Active while the middle-click key is held: TrackPoint movement scrolls.
+        // Active while the scroll key (Lower layer) is held: TrackPoint movement scrolls.
         scroll_layer {
             display-name = "Scroll";
             bindings = <
