@@ -7,6 +7,8 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/zmk/pointing.h>
+#include <dt-bindings/zmk/input_transform.h>
+#include <input/processors.dtsi>
 
 /*
  * The TrackPoint driver's runtime-tuning behaviors (&mms, from
@@ -21,8 +23,20 @@
 #define LOWER   1
 #define RAISE   2
 #define ADJUST  3
+#define SCROLL  4
 
 / {
+    behaviors {
+        // Tap: middle click. Hold: TrackPoint scrolls (activates SCROLL layer).
+        mclk_scroll: mclk_scroll {
+            compatible = "zmk,behavior-hold-tap";
+            #binding-cells = <2>;
+            flavor = "hold-preferred";
+            tapping-term-ms = <200>;
+            bindings = <&mo>, <&mkp>;
+        };
+    };
+
     keymap {
         compatible = "zmk,keymap";
 
@@ -40,7 +54,7 @@
             display-name = "Lower";
             bindings = <
                 &kp TAB   &kp N1    &kp N2    &kp N3    &kp N4 &kp N5     &kp N6   &kp N7   &kp N8 &kp N9    &kp N0 &kp BSPC
-                &kp LCTRL &mkp LCLK &mkp MCLK &mkp RCLK &trans &trans     &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
+                &kp LCTRL &mkp LCLK &mclk_scroll SCROLL MCLK &mkp RCLK &trans &trans     &kp LEFT &kp DOWN &kp UP &kp RIGHT &trans &trans
                 &kp LSHFT &trans    &trans    &trans    &trans &trans     &trans   &trans   &trans &trans    &trans &trans
                                     &kp LGUI &trans &kp SPACE     &kp RET &mo ADJUST &kp RALT
             >;
@@ -65,5 +79,31 @@
                                                          &trans &trans &trans     &trans &trans &trans
             >;
         };
+
+        // Active while the middle-click key is held: TrackPoint movement scrolls.
+        scroll_layer {
+            display-name = "Scroll";
+            bindings = <
+                &trans &trans &trans &trans &trans &trans     &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans     &trans &trans &trans &trans &trans &trans
+                &trans &trans &trans &trans &trans &trans     &trans &trans &trans &trans &trans &trans
+                                     &trans &trans &trans     &trans &trans &trans
+            >;
+        };
+    };
+};
+
+/*
+ * While SCROLL is active, TrackPoint X/Y become horizontal/vertical scroll.
+ * The listener lives on the central (left half); see corne_tp.dtsi.
+ * Speed: raise the divisor in `zip_scroll_scaler 1 10` to scroll slower.
+ * Direction: remove INPUT_TRANSFORM_Y_INVERT to flip vertical scrolling.
+ */
+&trackpoint_listener {
+    scroller {
+        layers = <SCROLL>;
+        input-processors = <&zip_xy_to_scroll_mapper>,
+                           <&zip_scroll_scaler 1 10>,
+                           <&zip_scroll_transform INPUT_TRANSFORM_Y_INVERT>;
     };
 };
