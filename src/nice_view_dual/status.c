@@ -19,13 +19,12 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/endpoint_changed.h>
 #include <zmk/events/layer_state_changed.h>
-#include <zmk/events/position_state_changed.h>
 #include <zmk/usb.h>
 #include <zmk/ble.h>
 #include <zmk/endpoints.h>
 #include <zmk/keymap.h>
 #include <zmk/split/central.h>
-#include "cat_art.h"
+#include "logo_art.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -43,56 +42,25 @@ struct layer_status_state {
     const char *label;
 };
 
-/*
- * Bongo cat: each key press slaps a paw down (alternating left/right), the paws
- * lift again after CAT_PAW_UP_MS, and the cat closes its eyes after
- * CAT_SLEEP_MS without typing. Sprites live in cat_art.h.
- */
-#define CAT_PAW_UP_MS 150
-#define CAT_SLEEP_MS 10000
+// Draw logo_art (logo_art.h) scaled up and centred in the box below the batteries.
+static void draw_logo(lv_obj_t *canvas) {
+    const int rows = ARRAY_SIZE(logo_art);
+    const int cols = strlen(logo_art[0]);
+    const int x0 = 1 + (66 - cols * LOGO_SCALE) / 2;
+    const int y0 = 22 + (40 - rows * LOGO_SCALE) / 2;
 
-#define CAT_HEAD_X 20
-#define CAT_HEAD_Y 28
-
-static void draw_sprite(lv_obj_t *canvas, int x, int y, const char *const *rows, size_t n) {
-    for (size_t r = 0; r < n; r++) {
-        for (int c = 0; rows[r][c] != '\0'; c++) {
-            if (rows[r][c] == '#') {
-                lv_canvas_set_px(canvas, x + c, y + r, LVGL_FOREGROUND, LV_OPA_COVER);
+    for (int r = 0; r < rows; r++) {
+        for (int c = 0; logo_art[r][c] != '\0'; c++) {
+            if (logo_art[r][c] != '#') {
+                continue;
+            }
+            for (int dy = 0; dy < LOGO_SCALE; dy++) {
+                for (int dx = 0; dx < LOGO_SCALE; dx++) {
+                    lv_canvas_set_px(canvas, x0 + c * LOGO_SCALE + dx, y0 + r * LOGO_SCALE + dy,
+                                     LVGL_FOREGROUND, LV_OPA_COVER);
+                }
             }
         }
-    }
-}
-
-#define DRAW_SPRITE(canvas, x, y, sprite) draw_sprite(canvas, x, y, sprite, ARRAY_SIZE(sprite))
-
-static void draw_cat(lv_obj_t *canvas, const struct status_state *state) {
-    DRAW_SPRITE(canvas, CAT_HEAD_X, CAT_HEAD_Y, cat_head);
-    if (state->cat_asleep) {
-        DRAW_SPRITE(canvas, CAT_HEAD_X + 6, CAT_HEAD_Y + 7, cat_eye_closed);
-        DRAW_SPRITE(canvas, CAT_HEAD_X + 20, CAT_HEAD_Y + 7, cat_eye_closed);
-    } else {
-        DRAW_SPRITE(canvas, CAT_HEAD_X + 6, CAT_HEAD_Y + 7, cat_eye_open);
-        DRAW_SPRITE(canvas, CAT_HEAD_X + 20, CAT_HEAD_Y + 7, cat_eye_open);
-    }
-
-    // Body sides, from the head down to the table.
-    for (int y = CAT_HEAD_Y + 16; y < 56; y++) {
-        lv_canvas_set_px(canvas, CAT_HEAD_X + 2, y, LVGL_FOREGROUND, LV_OPA_COVER);
-        lv_canvas_set_px(canvas, CAT_HEAD_X + 25, y, LVGL_FOREGROUND, LV_OPA_COVER);
-    }
-
-    DRAW_SPRITE(canvas, 8, 56, cat_keyboard);
-
-    if (state->cat_paw == 1) {
-        DRAW_SPRITE(canvas, 14, 53, cat_paw_down);
-    } else {
-        DRAW_SPRITE(canvas, 13, CAT_HEAD_Y + 16, cat_paw_up);
-    }
-    if (state->cat_paw == 2) {
-        DRAW_SPRITE(canvas, 48, 53, cat_paw_down);
-    } else {
-        DRAW_SPRITE(canvas, 49, CAT_HEAD_Y + 16, cat_paw_up);
     }
 }
 
@@ -134,10 +102,10 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
 
-    // Draw bongo cat box
+    // Draw logo box
     canvas_draw_rect(canvas, 0, 21, 68, 42, &rect_white_dsc);
     canvas_draw_rect(canvas, 1, 22, 66, 40, &rect_black_dsc);
-    draw_cat(canvas, state);
+    draw_logo(canvas);
 
 
     // Rotate canvas
@@ -357,47 +325,6 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, laye
 
 ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
 
-// Cat animation. All of this runs on the display work queue.
-static uint8_t cat_last_paw = 2;
-
-static void cat_set(uint8_t paw, bool asleep) {
-    struct zmk_widget_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
-        widget->state.cat_paw = paw;
-        widget->state.cat_asleep = asleep;
-        draw_top(widget->obj, &widget->state);
-    }
-}
-
-static void cat_paw_up_handler(struct k_work *work) { cat_set(0, false); }
-static K_WORK_DELAYABLE_DEFINE(cat_paw_up_work, cat_paw_up_handler);
-
-static void cat_sleep_handler(struct k_work *work) { cat_set(0, true); }
-static K_WORK_DELAYABLE_DEFINE(cat_sleep_work, cat_sleep_handler);
-
-struct cat_state {
-    bool pressed;
-};
-
-static void cat_update_cb(struct cat_state state) {
-    if (!state.pressed) {
-        return;
-    }
-
-    cat_last_paw = (cat_last_paw == 1) ? 2 : 1;
-    cat_set(cat_last_paw, false);
-    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_paw_up_work, K_MSEC(CAT_PAW_UP_MS));
-    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_sleep_work, K_MSEC(CAT_SLEEP_MS));
-}
-
-static struct cat_state cat_get_state(const zmk_event_t *eh) {
-    const struct zmk_position_state_changed *ev = as_zmk_position_state_changed(eh);
-    return (struct cat_state){.pressed = ev != NULL && ev->state};
-}
-
-ZMK_DISPLAY_WIDGET_LISTENER(widget_cat, struct cat_state, cat_update_cb, cat_get_state)
-ZMK_SUBSCRIPTION(widget_cat, zmk_position_state_changed);
-
 int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
     lv_obj_set_size(widget->obj, 160, 68);
@@ -416,8 +343,6 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget_peripheral_battery_init();
     widget_output_status_init();
     widget_layer_status_init();
-    widget_cat_init();
-    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_sleep_work, K_MSEC(CAT_SLEEP_MS));
 
     return 0;
 }

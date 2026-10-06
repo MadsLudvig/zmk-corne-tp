@@ -34,8 +34,6 @@ struct status_state {
     bool profiles_bonded[NICEVIEW_PROFILE_COUNT];
     uint8_t layer_index;
     const char *layer_label;
-    uint8_t cat_paw; // 0 = paws up, 1 = left paw down, 2 = right paw down
-    bool cat_asleep;
 #else
     bool connected;
 #endif
