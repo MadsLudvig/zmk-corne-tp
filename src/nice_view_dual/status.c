@@ -42,12 +42,12 @@ struct layer_status_state {
     const char *label;
 };
 
-// Draw logo_art (logo_art.h) scaled up and centred in the box below the batteries.
+// Draw logo_art (logo_art.h) scaled up and centred below the batteries (68x52 area).
 static void draw_logo(lv_obj_t *canvas) {
     const int rows = ARRAY_SIZE(logo_art);
     const int cols = strlen(logo_art[0]);
-    const int x0 = 1 + (66 - cols * LOGO_SCALE) / 2;
-    const int y0 = 22 + (40 - rows * LOGO_SCALE) / 2;
+    const int x0 = (68 - cols * LOGO_SCALE) / 2;
+    const int y0 = 16 + (52 - rows * LOGO_SCALE) / 2;
 
     for (int r = 0; r < rows; r++) {
         for (int c = 0; logo_art[r][c] != '\0'; c++) {
@@ -69,10 +69,6 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
-    lv_draw_rect_dsc_t rect_black_dsc;
-    init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
-    lv_draw_rect_dsc_t rect_white_dsc;
-    init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
 
     // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
@@ -102,9 +98,6 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
 
-    // Draw logo box
-    canvas_draw_rect(canvas, 0, 21, 68, 42, &rect_white_dsc);
-    canvas_draw_rect(canvas, 1, 22, 66, 40, &rect_black_dsc);
     draw_logo(canvas);
 
 
