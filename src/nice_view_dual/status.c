@@ -18,14 +18,14 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #include <zmk/events/battery_state_changed.h>
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/endpoint_changed.h>
-#include <zmk/events/wpm_state_changed.h>
 #include <zmk/events/layer_state_changed.h>
+#include <zmk/events/position_state_changed.h>
 #include <zmk/usb.h>
 #include <zmk/ble.h>
 #include <zmk/endpoints.h>
 #include <zmk/keymap.h>
-#include <zmk/wpm.h>
 #include <zmk/split/central.h>
+#include "cat_art.h"
 
 static sys_slist_t widgets = SYS_SLIST_STATIC_INIT(&widgets);
 
@@ -43,23 +43,68 @@ struct layer_status_state {
     const char *label;
 };
 
-struct wpm_status_state {
-    uint8_t wpm;
-};
+/*
+ * Bongo cat: each key press slaps a paw down (alternating left/right), the paws
+ * lift again after CAT_PAW_UP_MS, and the cat closes its eyes after
+ * CAT_SLEEP_MS without typing. Sprites live in cat_art.h.
+ */
+#define CAT_PAW_UP_MS 150
+#define CAT_SLEEP_MS 10000
+
+#define CAT_HEAD_X 20
+#define CAT_HEAD_Y 28
+
+static void draw_sprite(lv_obj_t *canvas, int x, int y, const char *const *rows, size_t n) {
+    for (size_t r = 0; r < n; r++) {
+        for (int c = 0; rows[r][c] != '\0'; c++) {
+            if (rows[r][c] == '#') {
+                lv_canvas_set_px(canvas, x + c, y + r, LVGL_FOREGROUND, LV_OPA_COVER);
+            }
+        }
+    }
+}
+
+#define DRAW_SPRITE(canvas, x, y, sprite) draw_sprite(canvas, x, y, sprite, ARRAY_SIZE(sprite))
+
+static void draw_cat(lv_obj_t *canvas, const struct status_state *state) {
+    DRAW_SPRITE(canvas, CAT_HEAD_X, CAT_HEAD_Y, cat_head);
+    if (state->cat_asleep) {
+        DRAW_SPRITE(canvas, CAT_HEAD_X + 6, CAT_HEAD_Y + 7, cat_eye_closed);
+        DRAW_SPRITE(canvas, CAT_HEAD_X + 20, CAT_HEAD_Y + 7, cat_eye_closed);
+    } else {
+        DRAW_SPRITE(canvas, CAT_HEAD_X + 6, CAT_HEAD_Y + 7, cat_eye_open);
+        DRAW_SPRITE(canvas, CAT_HEAD_X + 20, CAT_HEAD_Y + 7, cat_eye_open);
+    }
+
+    // Body sides, from the head down to the table.
+    for (int y = CAT_HEAD_Y + 16; y < 56; y++) {
+        lv_canvas_set_px(canvas, CAT_HEAD_X + 2, y, LVGL_FOREGROUND, LV_OPA_COVER);
+        lv_canvas_set_px(canvas, CAT_HEAD_X + 25, y, LVGL_FOREGROUND, LV_OPA_COVER);
+    }
+
+    DRAW_SPRITE(canvas, 8, 56, cat_keyboard);
+
+    if (state->cat_paw == 1) {
+        DRAW_SPRITE(canvas, 14, 53, cat_paw_down);
+    } else {
+        DRAW_SPRITE(canvas, 13, CAT_HEAD_Y + 16, cat_paw_up);
+    }
+    if (state->cat_paw == 2) {
+        DRAW_SPRITE(canvas, 48, 53, cat_paw_down);
+    } else {
+        DRAW_SPRITE(canvas, 49, CAT_HEAD_Y + 16, cat_paw_up);
+    }
+}
 
 static void draw_top(lv_obj_t *widget, const struct status_state *state) {
     lv_obj_t *canvas = lv_obj_get_child(widget, 0);
 
     lv_draw_label_dsc_t label_dsc;
     init_label_dsc(&label_dsc, LVGL_FOREGROUND, &lv_font_montserrat_16, LV_TEXT_ALIGN_RIGHT);
-    lv_draw_label_dsc_t label_dsc_wpm;
-    init_label_dsc(&label_dsc_wpm, LVGL_FOREGROUND, &lv_font_unscii_8, LV_TEXT_ALIGN_RIGHT);
     lv_draw_rect_dsc_t rect_black_dsc;
     init_rect_dsc(&rect_black_dsc, LVGL_BACKGROUND);
     lv_draw_rect_dsc_t rect_white_dsc;
     init_rect_dsc(&rect_white_dsc, LVGL_FOREGROUND);
-    lv_draw_line_dsc_t line_dsc;
-    init_line_dsc(&line_dsc, LVGL_FOREGROUND, 1);
 
     // Fill background
     lv_canvas_fill_bg(canvas, LVGL_BACKGROUND, LV_OPA_COVER);
@@ -89,37 +134,11 @@ static void draw_top(lv_obj_t *widget, const struct status_state *state) {
 
     canvas_draw_text(canvas, 0, 0, CANVAS_SIZE, &label_dsc, output_text);
 
-    // Draw WPM
+    // Draw bongo cat box
     canvas_draw_rect(canvas, 0, 21, 68, 42, &rect_white_dsc);
     canvas_draw_rect(canvas, 1, 22, 66, 40, &rect_black_dsc);
+    draw_cat(canvas, state);
 
-    char wpm_text[6] = {};
-    snprintf(wpm_text, sizeof(wpm_text), "%d", state->wpm[9]);
-    canvas_draw_text(canvas, 42, 52, 24, &label_dsc_wpm, wpm_text);
-
-    int max = 0;
-    int min = 256;
-
-    for (int i = 0; i < 10; i++) {
-        if (state->wpm[i] > max) {
-            max = state->wpm[i];
-        }
-        if (state->wpm[i] < min) {
-            min = state->wpm[i];
-        }
-    }
-
-    int range = max - min;
-    if (range == 0) {
-        range = 1;
-    }
-
-    lv_point_t points[10];
-    for (int i = 0; i < 10; i++) {
-        points[i].x = 2 + i * 7;
-        points[i].y = 60 - (state->wpm[i] - min) * 36 / range;
-    }
-    canvas_draw_line(canvas, points, 10, &line_dsc);
 
     // Rotate canvas
     rotate_canvas(canvas);
@@ -338,27 +357,46 @@ ZMK_DISPLAY_WIDGET_LISTENER(widget_layer_status, struct layer_status_state, laye
 
 ZMK_SUBSCRIPTION(widget_layer_status, zmk_layer_state_changed);
 
-static void set_wpm_status(struct zmk_widget_status *widget, struct wpm_status_state state) {
-    for (int i = 0; i < 9; i++) {
-        widget->state.wpm[i] = widget->state.wpm[i + 1];
-    }
-    widget->state.wpm[9] = state.wpm;
+// Cat animation. All of this runs on the display work queue.
+static uint8_t cat_last_paw = 2;
 
-    draw_top(widget->obj, &widget->state);
-}
-
-static void wpm_status_update_cb(struct wpm_status_state state) {
+static void cat_set(uint8_t paw, bool asleep) {
     struct zmk_widget_status *widget;
-    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) { set_wpm_status(widget, state); }
+    SYS_SLIST_FOR_EACH_CONTAINER(&widgets, widget, node) {
+        widget->state.cat_paw = paw;
+        widget->state.cat_asleep = asleep;
+        draw_top(widget->obj, &widget->state);
+    }
 }
 
-struct wpm_status_state wpm_status_get_state(const zmk_event_t *eh) {
-    return (struct wpm_status_state){.wpm = zmk_wpm_get_state()};
+static void cat_paw_up_handler(struct k_work *work) { cat_set(0, false); }
+static K_WORK_DELAYABLE_DEFINE(cat_paw_up_work, cat_paw_up_handler);
+
+static void cat_sleep_handler(struct k_work *work) { cat_set(0, true); }
+static K_WORK_DELAYABLE_DEFINE(cat_sleep_work, cat_sleep_handler);
+
+struct cat_state {
+    bool pressed;
 };
 
-ZMK_DISPLAY_WIDGET_LISTENER(widget_wpm_status, struct wpm_status_state, wpm_status_update_cb,
-                            wpm_status_get_state)
-ZMK_SUBSCRIPTION(widget_wpm_status, zmk_wpm_state_changed);
+static void cat_update_cb(struct cat_state state) {
+    if (!state.pressed) {
+        return;
+    }
+
+    cat_last_paw = (cat_last_paw == 1) ? 2 : 1;
+    cat_set(cat_last_paw, false);
+    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_paw_up_work, K_MSEC(CAT_PAW_UP_MS));
+    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_sleep_work, K_MSEC(CAT_SLEEP_MS));
+}
+
+static struct cat_state cat_get_state(const zmk_event_t *eh) {
+    const struct zmk_position_state_changed *ev = as_zmk_position_state_changed(eh);
+    return (struct cat_state){.pressed = ev != NULL && ev->state};
+}
+
+ZMK_DISPLAY_WIDGET_LISTENER(widget_cat, struct cat_state, cat_update_cb, cat_get_state)
+ZMK_SUBSCRIPTION(widget_cat, zmk_position_state_changed);
 
 int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget->obj = lv_obj_create(parent);
@@ -378,7 +416,8 @@ int zmk_widget_status_init(struct zmk_widget_status *widget, lv_obj_t *parent) {
     widget_peripheral_battery_init();
     widget_output_status_init();
     widget_layer_status_init();
-    widget_wpm_status_init();
+    widget_cat_init();
+    k_work_reschedule_for_queue(zmk_display_work_q(), &cat_sleep_work, K_MSEC(CAT_SLEEP_MS));
 
     return 0;
 }
