@@ -85,14 +85,15 @@
 /*
  * While SCROLL is active, TrackPoint X/Y become horizontal/vertical scroll.
  * The listener lives on the central (left half); see corne_tp.dtsi.
- * Speed: raise the divisor in `zip_scroll_scaler 1 10` to scroll slower.
+ * Speed: raise the divisor in `zip_scroll_scaler 8 5` to scroll slower (smooth
+ * scrolling is on, so one unit is 1/16 of a wheel notch).
  * Direction: remove INPUT_TRANSFORM_Y_INVERT to flip vertical scrolling.
  */
 &trackpoint_listener {
     scroller {
         layers = <SCROLL>;
         input-processors = <&zip_xy_to_scroll_mapper>,
-                           <&zip_scroll_scaler 1 10>,
+                           <&zip_scroll_scaler 8 5>,
                            <&zip_scroll_transform INPUT_TRANSFORM_Y_INVERT>;
     };
 };
