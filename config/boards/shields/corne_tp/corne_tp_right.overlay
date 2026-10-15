@@ -214,6 +214,10 @@
         /* Max speed/acceleration (default: 97, max: 255) */
         /* Keeps fast movements responsive */
         tp-val6-upper-speed = <255>;
+
+        /* PS/2 report rate in Hz (default: 100, max: 200) */
+        /* Halves the interval between TrackPoint samples for smoother motion */
+        sampling-rate = <200>;
     };
 };
 
